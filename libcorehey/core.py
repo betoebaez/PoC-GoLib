@@ -320,6 +320,68 @@ def get_typification_ultra_simple(org: str, group: str) -> str:
     return get_typification(config, org, group)
 
 
+def get_quick_replies_managed_identity_only(org: str, group: str, vault_url: str = None, client_id: str = None) -> str:
+    """
+    Function that ONLY uses Managed Identity API, skipping az CLI completely.
+    
+    Use this when you want to force Managed Identity usage (testing, specific requirements, etc.)
+    
+    Args:
+        org: Organization identifier
+        group: Group identifier
+        vault_url: Azure Key Vault URL (optional, uses default waSecrets vault)
+        client_id: Client ID for User-Assigned Managed Identity (optional)
+        
+    Returns:
+        JSON string containing the quick replies response
+        
+    Raises:
+        LibCoreHeyError: If the library fails to load or API call fails
+    """
+    config = {
+        "use_managed_identity": True,
+        "skip_az_cli": True  # Forzar uso de Managed Identity API
+    }
+    
+    if vault_url:
+        config["vault_url"] = vault_url
+    if client_id:
+        config["client_id"] = client_id
+        
+    return get_quick_replies(config, org, group)
+
+
+def get_typification_managed_identity_only(org: str, group: str, vault_url: str = None, client_id: str = None) -> str:
+    """
+    Function that ONLY uses Managed Identity API, skipping az CLI completely.
+    
+    Use this when you want to force Managed Identity usage (testing, specific requirements, etc.)
+    
+    Args:
+        org: Organization identifier
+        group: Group identifier
+        vault_url: Azure Key Vault URL (optional, uses default waSecrets vault)
+        client_id: Client ID for User-Assigned Managed Identity (optional)
+        
+    Returns:
+        JSON string containing the typification response
+        
+    Raises:
+        LibCoreHeyError: If the library fails to load or API call fails
+    """
+    config = {
+        "use_managed_identity": True,
+        "skip_az_cli": True  # Forzar uso de Managed Identity API
+    }
+    
+    if vault_url:
+        config["vault_url"] = vault_url
+    if client_id:
+        config["client_id"] = client_id
+        
+    return get_typification(config, org, group)
+
+
 def add_numbers(a: int, b: int) -> int:
     """
     Add two numbers.

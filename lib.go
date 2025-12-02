@@ -103,7 +103,8 @@ func GetTypification(vaultConfig *C.char, org *C.char, group *C.char) *C.char {
 type VaultConfig struct {
 	VaultURL           string `json:"vault_url,omitempty"` // Opcional si está en variable de entorno
 	UseManagedIdentity bool   `json:"use_managed_identity"`
-	ClientID           string `json:"client_id,omitempty"` // Solo para User-Assigned MI
+	ClientID           string `json:"client_id,omitempty"`   // Solo para User-Assigned MI
+	SkipAzCLI          bool   `json:"skip_az_cli,omitempty"` // Forzar uso de Managed Identity API
 }
 
 type AzureTokenResponse struct {
@@ -125,6 +126,11 @@ func getSecretsFromVault(configJSON string) (string, string, error) {
 	vaultName := getEnvironmentVariable("AZURE_KEY_VAULT_NAME")
 	if vaultName == "" {
 		vaultName = "waSecrets" // Nombre por defecto basado en tu ejemplo
+	}
+
+	// Si skip_az_cli está activado, usar directamente Managed Identity API
+	if config.SkipAzCLI {
+		return getSecretsWithAPI(config)
 	}
 
 	// Intentar primero con az CLI (más simple si está disponible)
@@ -275,7 +281,12 @@ func getSecretsWithAPI(config VaultConfig) (string, string, error) {
 		// Intentar obtener desde variable de entorno si no se proporcionó
 		vaultURL = getEnvironmentVariable("AZURE_KEY_VAULT_URL")
 		if vaultURL == "" {
-			return "", "", fmt.Errorf("vault_url not provided and AZURE_KEY_VAULT_URL environment variable not set")
+			// Usar vault por defecto si no se especifica ninguno
+			vaultName := getEnvironmentVariable("AZURE_KEY_VAULT_NAME")
+			if vaultName == "" {
+				vaultName = "waSecrets" // Nombre por defecto
+			}
+			vaultURL = fmt.Sprintf("https://%s.vault.azure.net", vaultName)
 		}
 	}
 
