@@ -7,12 +7,13 @@
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
 
-# Go build artifacts
+# Go build artifacts (except package binaries)
 *.h
-*.dylib
-*.dll
+# Allow package binaries
+!libcorehey/*.so
+!libcorehey/*.dylib
+!libcorehey/*.dll
 
 # Virtual environments
 venv/
