@@ -2,7 +2,7 @@ name: Build Multi-Platform Binaries
 
 permissions:
   contents: write
-  
+
 on:
   push:
     branches: [ main ]
@@ -106,12 +106,14 @@ jobs:
         name: python-package
         path: dist/
     
-    - name: Create GitHub Release (Public)
+    - name: Create GitHub Release (Library Only)
       uses: softprops/action-gh-release@v1
       with:
         files: dist/*
         draft: false
         prerelease: false
+        generate_release_notes: false
+        make_latest: true
         name: "LibCoreHey v${{ github.ref_name }}"
         body: |
           ## 📦 LibCoreHey - HeyBanco Python Library
@@ -134,5 +136,23 @@ jobs:
           replies = LibCoreHey.get_quick_replies(token, org, group)
           typifications = LibCoreHey.get_typification(token, org, group)
           ```
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Remove Source Code Assets
+      run: |
+        # Obtener ID del release
+        RELEASE_ID=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          "https://api.github.com/repos/${{ github.repository }}/releases/tags/${{ github.ref_name }}" | \
+          jq -r '.id')
+        
+        # Obtener y eliminar assets de código fuente
+        curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          "https://api.github.com/repos/${{ github.repository }}/releases/$RELEASE_ID/assets" | \
+          jq -r '.[] | select(.name | contains("Source code")) | .id' | \
+          while read asset_id; do
+            curl -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/${{ github.repository }}/releases/assets/$asset_id"
+            echo "🗑️ Eliminado: Source code asset $asset_id"
+          done
+        
+        echo "✅ Release limpiado - Solo librería disponible"
