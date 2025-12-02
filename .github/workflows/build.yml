@@ -84,10 +84,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install build twine
     
-    - name: Build Python package
+    - name: Build Python package (wheel only)
       run: |
-        # No modifications needed - setup.py detects CI environment automatically
-        python -m build
+        # Build only wheel - faster and smaller
+        python -m build --wheel
     
     - name: Upload package artifacts
       uses: actions/upload-artifact@v4
@@ -100,11 +100,42 @@ jobs:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     steps:
+    - uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
     - name: Download package
       uses: actions/download-artifact@v4
       with:
         name: python-package
         path: dist/
+        
+    - name: Download all binaries to repo
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+        
+    - name: Commit binaries to repository
+      run: |
+        # Copy binaries to libcorehey directory
+        cp artifacts/linux-binary/libcorehey.so libcorehey/ || echo "Linux binary not found"
+        cp artifacts/windows-binary/libcorehey.dll libcorehey/ || echo "Windows binary not found"  
+        cp artifacts/macos-binary/libcorehey.dylib libcorehey/ || echo "macOS binary not found"
+        
+        # Configure git
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        
+        # Add and commit binaries
+        git add libcorehey/*.so libcorehey/*.dll libcorehey/*.dylib || echo "No binaries to add"
+        
+        if ! git diff --staged --quiet; then
+          git commit -m "🤖 Auto-update binaries for ${{ github.ref_name }}"
+          git push origin master
+          echo "✅ Binarios agregados al repositorio"
+        else
+          echo "ℹ️ No hay cambios en binarios"
+        fi
     
     - name: Create GitHub Release (Library Only)
       uses: softprops/action-gh-release@v1
