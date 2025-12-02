@@ -23,7 +23,9 @@ class BuildLibrary:
         
         # Check if Go is available
         if not shutil.which('go'):
-            raise RuntimeError("Go compiler not found. Please install Go to build this package.")
+            print("⚠️  Go compiler not found. Skipping library build.")
+            print("💡 Note: This package requires Go to be installed, or use pre-built binaries.")
+            return False
         
         # Check if lib.go exists
         if not Path('lib.go').exists():
@@ -71,8 +73,14 @@ existing_libs = glob.glob("libcorehey/*.{dylib,so,dll}".replace("{", "[").replac
 
 if not existing_libs:
     # Build the library if no pre-built binaries exist
-    print("No pre-built binaries found, building library...")
-    BuildLibrary.build_library()
+    print("No pre-built binaries found, attempting to build library...")
+    build_success = BuildLibrary.build_library()
+    if not build_success:
+        print("⚠️  Library build failed. Package will install but may not work until binaries are provided.")
+        print("💡 Solutions:")
+        print("   1. Install Go: apt install golang-go (Linux) or brew install go (macOS)")
+        print("   2. Wait for GitHub Actions to generate pre-built binaries")
+        print("   3. Use a system with Go installed")
 
 # Get all available shared library files (supports multiple platforms)
 lib_files = []

@@ -27,10 +27,12 @@ cd LibCoreHey
 pip install -e .
 ```
 
-**Prerequisites for building from source:**
-- Go 1.19+ installed and in PATH
+**Prerequisites:**
 - Python 3.8+
-- C compiler (gcc/clang)
+- Go 1.19+ (required for building from source)
+- C compiler (gcc/clang) - usually pre-installed
+
+**Note:** If Go is not installed, the package will install but won't work until binaries are provided.
 
 ## Quick Start
 
