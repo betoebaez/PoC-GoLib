@@ -67,20 +67,25 @@ class BuildLibrary:
         print(f"✅ Built {lib_file}")
 
 
-# Check if we should build the library (not in CI/pre-built mode)
+# Check for existing pre-built binaries
 import glob
-existing_libs = glob.glob("libcorehey/*.{dylib,so,dll}".replace("{", "[").replace("}", "]"))
+existing_libs = []
+for ext in ["libcorehey/*.dylib", "libcorehey/*.so", "libcorehey/*.dll"]:
+    existing_libs.extend(glob.glob(ext))
 
-if not existing_libs:
-    # Build the library if no pre-built binaries exist
+if existing_libs:
+    print(f"✅ Found pre-built binaries: {[lib.split('/')[-1] for lib in existing_libs]}")
+    print("🎉 No Go compiler required - using pre-compiled binaries!")
+else:
+    # Only try to build if no binaries exist
     print("No pre-built binaries found, attempting to build library...")
     build_success = BuildLibrary.build_library()
     if not build_success:
         print("⚠️  Library build failed. Package will install but may not work until binaries are provided.")
         print("💡 Solutions:")
         print("   1. Install Go: apt install golang-go (Linux) or brew install go (macOS)")
-        print("   2. Wait for GitHub Actions to generate pre-built binaries")
-        print("   3. Use a system with Go installed")
+        print("   2. Use pre-built binaries from GitHub releases")
+        print("   3. Contact package maintainer for assistance")
 
 # Get all available shared library files (supports multiple platforms)
 lib_files = []

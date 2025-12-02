@@ -22,17 +22,16 @@ pip install LibCoreHey
 ### From Source
 
 ```bash
-git clone https://github.com/heybanco/LibCoreHey.git
-cd LibCoreHey
+git clone https://github.com/betoebaez/PoC-GoLib.git
+cd PoC-GoLib
 pip install -e .
 ```
 
 **Prerequisites:**
 - Python 3.8+
-- Go 1.19+ (required for building from source)
-- C compiler (gcc/clang) - usually pre-installed
+- **No Go compiler needed** - Uses pre-built binaries!
 
-**Note:** If Go is not installed, the package will install but won't work until binaries are provided.
+**Note:** This package includes pre-compiled binaries for macOS, Linux, and Windows. No additional dependencies required!
 
 ## Quick Start
 
