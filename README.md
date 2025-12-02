@@ -13,13 +13,20 @@ Python wrapper for HeyBanco's core Go library, providing easy access to HeyBanco
 
 ## Installation
 
-### From PyPI (Recommended)
+### From GitHub Releases (Recommended)
 
 ```bash
-pip install LibCoreHey
+# Easy installer (automatic latest version)
+curl -sSL https://raw.githubusercontent.com/betoebaez/PoC-GoLib/master/install.sh | bash
 ```
 
-### From Source
+**Or manual installation:**
+```bash
+# Replace VERSION with latest release version (e.g., 1.0.3)
+pip install https://github.com/betoebaez/PoC-GoLib/releases/download/vVERSION/libcorehey-VERSION-py3-none-any.whl
+```
+
+### From Private Source (Authorized users only)
 
 ```bash
 git clone https://github.com/betoebaez/PoC-GoLib.git

@@ -103,17 +103,33 @@ jobs:
         name: python-package
         path: dist/
     
-    - name: Create GitHub Release
+    - name: Create GitHub Release (Public)
       uses: softprops/action-gh-release@v1
       with:
         files: dist/*
         draft: false
         prerelease: false
+        name: "LibCoreHey v${{ github.ref_name }}"
+        body: |
+          ## 📦 LibCoreHey - HeyBanco Python Library
+          
+          ### 🚀 Installation
+          ```bash
+          pip install https://github.com/betoebaez/PoC-GoLib/releases/download/${{ github.ref_name }}/libcorehey-${{ github.ref_name }}-py3-none-any.whl
+          ```
+          
+          ### 📋 What's Included
+          - ✅ Pre-built binaries for macOS, Linux, Windows
+          - ✅ No Go compiler required
+          - ✅ Ready to use HeyBanco APIs
+          
+          ### 🔧 Usage
+          ```python
+          import libcorehey as LibCoreHey
+          
+          # HeyBanco API calls
+          replies = LibCoreHey.get_quick_replies(token, org, group)
+          typifications = LibCoreHey.get_typification(token, org, group)
+          ```
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
-    - name: Publish to PyPI
-      uses: pypa/gh-action-pypi-publish@v1.8.10
-      with:
-        user: __token__
-        password: ${{ secrets.PYPI_API_TOKEN }}
