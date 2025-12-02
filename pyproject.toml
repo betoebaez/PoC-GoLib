@@ -1,0 +1,77 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools-scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "LibCoreHey"
+version = "1.0.0"
+description = "Python wrapper for HeyBanco's core Go library"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+    { name = "HeyBanco Team", email = "dev@heybanco.com" },
+]
+keywords = ["heybanco", "api", "whatsapp", "go", "python", "wrapper"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Go",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+    "Topic :: Communications",
+]
+
+[project.urls]
+Homepage = "https://github.com/heybanco/LibCoreHey"
+"Bug Reports" = "https://github.com/heybanco/LibCoreHey/issues"
+Source = "https://github.com/heybanco/LibCoreHey"
+Documentation = "https://github.com/heybanco/LibCoreHey/blob/main/README.md"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0",
+    "pytest-cov",
+    "black",
+    "isort",
+    "flake8",
+]
+
+[tool.setuptools]
+packages = ["libcorehey"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+libcorehey = ["*.dylib", "*.so", "*.dll"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+    \.git
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 88
+multi_line_output = 3
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q --strict-markers"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]

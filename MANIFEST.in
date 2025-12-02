@@ -1,0 +1,9 @@
+include README.md
+include LICENSE
+include lib.go
+include build.sh
+include requirements.txt
+include requirements-dev.txt
+recursive-include libcorehey *.dylib *.so *.dll
+global-exclude __pycache__
+global-exclude *.py[co]

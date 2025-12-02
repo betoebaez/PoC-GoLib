@@ -1,0 +1,2 @@
+# LibCoreHey has no runtime Python dependencies
+# The library is self-contained with the Go shared library

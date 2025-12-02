@@ -1,0 +1,120 @@
+name: Build Multi-Platform Binaries
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            binary: libcorehey.so
+          - os: windows-latest
+            platform: windows  
+            binary: libcorehey.dll
+          - os: macos-latest
+            platform: macos
+            binary: libcorehey.dylib
+
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+    
+    - name: Build shared library
+      run: |
+        mkdir -p libcorehey
+        go build -buildmode=c-shared -o libcorehey/${{ matrix.binary }} lib.go
+      shell: bash
+    
+    - name: Sign library (macOS only)
+      if: matrix.os == 'macos-latest'
+      run: |
+        codesign -s - libcorehey/${{ matrix.binary }} || echo "Signing optional"
+      shell: bash
+    
+    - name: Upload binary artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.platform }}-binary
+        path: libcorehey/${{ matrix.binary }}
+
+  package:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Download all binaries
+      uses: actions/download-artifact@v3
+      with:
+        path: artifacts
+    
+    - name: Copy binaries to package
+      run: |
+        mkdir -p libcorehey
+        cp artifacts/linux-binary/libcorehey.so libcorehey/ || echo "Linux binary not found"
+        cp artifacts/windows-binary/libcorehey.dll libcorehey/ || echo "Windows binary not found"  
+        cp artifacts/macos-binary/libcorehey.dylib libcorehey/ || echo "macOS binary not found"
+        ls -la libcorehey/
+    
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+    
+    - name: Build Python package
+      run: |
+        # Remove auto-build from setup.py for pre-built binaries
+        sed -i 's/BuildLibrary\.build_library()/#BuildLibrary.build_library()/' setup.py
+        python -m build
+    
+    - name: Upload package artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: python-package
+        path: dist/
+
+  release:
+    needs: package
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+    - name: Download package
+      uses: actions/download-artifact@v3
+      with:
+        name: python-package
+        path: dist/
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: dist/*
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@v1.8.10
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
