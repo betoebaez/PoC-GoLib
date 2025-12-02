@@ -119,12 +119,20 @@ def _get_library():
     return _loader.load_library()
 
 
-def get_quick_replies(token: str, org: str, group: str) -> str:
+def get_quick_replies(vault_config: dict, org: str, group: str) -> str:
     """
-    Get quick replies from HeyBanco API.
+    Get quick replies from HeyBanco API using Azure Key Vault with Managed Identity.
     
     Args:
-        token: Authorization token for the API
+        vault_config: Dictionary containing Azure Key Vault configuration:
+            - vault_url: Azure Key Vault URL (optional if AZURE_KEY_VAULT_URL env var is set)
+            - use_managed_identity: True to use Managed Identity (default: True)
+            - client_id: Optional client ID for User-Assigned Managed Identity
+            
+        Note: The library will automatically look for these secrets in Key Vault:
+            - url-whatapp: WhatsApp API base URL
+            - token-whatapp: WhatsApp API authentication token
+            
         org: Organization identifier
         group: Group identifier
         
@@ -136,12 +144,14 @@ def get_quick_replies(token: str, org: str, group: str) -> str:
     """
     lib = _get_library()
     
-    token_bytes = token.encode('utf-8')
+    import json
+    vault_config_json = json.dumps(vault_config)
+    vault_config_bytes = vault_config_json.encode('utf-8')
     org_bytes = org.encode('utf-8')
     group_bytes = group.encode('utf-8')
     
     try:
-        result_ptr = lib.GetQuickReplies(token_bytes, org_bytes, group_bytes)
+        result_ptr = lib.GetQuickReplies(vault_config_bytes, org_bytes, group_bytes)
         if result_ptr:
             result = ctypes.cast(result_ptr, ctypes.c_char_p).value.decode('utf-8')
             return result
@@ -151,12 +161,20 @@ def get_quick_replies(token: str, org: str, group: str) -> str:
         raise LibCoreHeyError(f"Failed to get quick replies: {e}")
 
 
-def get_typification(token: str, org: str, group: str) -> str:
+def get_typification(vault_config: dict, org: str, group: str) -> str:
     """
-    Get typifications from HeyBanco API.
+    Get typifications from HeyBanco API using Azure Key Vault with Managed Identity.
     
     Args:
-        token: Authorization token for the API
+        vault_config: Dictionary containing Azure Key Vault configuration:
+            - vault_url: Azure Key Vault URL (optional if AZURE_KEY_VAULT_URL env var is set)
+            - use_managed_identity: True to use Managed Identity (default: True)
+            - client_id: Optional client ID for User-Assigned Managed Identity
+            
+        Note: The library will automatically look for these secrets in Key Vault:
+            - url-whatapp: WhatsApp API base URL
+            - token-whatapp: WhatsApp API authentication token
+            
         org: Organization identifier
         group: Group identifier
         
@@ -168,12 +186,14 @@ def get_typification(token: str, org: str, group: str) -> str:
     """
     lib = _get_library()
     
-    token_bytes = token.encode('utf-8')
+    import json
+    vault_config_json = json.dumps(vault_config)
+    vault_config_bytes = vault_config_json.encode('utf-8')
     org_bytes = org.encode('utf-8')
     group_bytes = group.encode('utf-8')
     
     try:
-        result_ptr = lib.GetTypification(token_bytes, org_bytes, group_bytes)
+        result_ptr = lib.GetTypification(vault_config_bytes, org_bytes, group_bytes)
         if result_ptr:
             result = ctypes.cast(result_ptr, ctypes.c_char_p).value.decode('utf-8')
             return result
@@ -181,6 +201,123 @@ def get_typification(token: str, org: str, group: str) -> str:
             return ""
     except Exception as e:
         raise LibCoreHeyError(f"Failed to get typification: {e}")
+
+
+def create_azure_config(vault_url: str = None, client_id: str = None) -> dict:
+    """
+    Create Azure Key Vault configuration with sensible defaults.
+    
+    Args:
+        vault_url: Azure Key Vault URL (optional, uses AZURE_KEY_VAULT_URL env var if not provided)
+        client_id: Client ID for User-Assigned Managed Identity (optional)
+        
+    Returns:
+        Configuration dictionary for Azure Key Vault
+    """
+    import os
+    
+    config = {
+        "use_managed_identity": True
+    }
+    
+    if vault_url:
+        config["vault_url"] = vault_url
+    elif os.getenv("AZURE_KEY_VAULT_URL"):
+        config["vault_url"] = os.getenv("AZURE_KEY_VAULT_URL")
+    # If neither provided, the Go library will try environment variable
+    
+    if client_id:
+        config["client_id"] = client_id
+    elif os.getenv("AZURE_CLIENT_ID"):
+        config["client_id"] = os.getenv("AZURE_CLIENT_ID")
+        
+    return config
+
+
+def get_quick_replies_simple(org: str, group: str, vault_url: str = None, client_id: str = None) -> str:
+    """
+    Simplified function to get quick replies using Azure Key Vault with automatic configuration.
+    
+    Args:
+        org: Organization identifier
+        group: Group identifier
+        vault_url: Azure Key Vault URL (optional, uses AZURE_KEY_VAULT_URL env var)
+        client_id: Client ID for User-Assigned Managed Identity (optional)
+        
+    Returns:
+        JSON string containing the quick replies response
+        
+    Raises:
+        LibCoreHeyError: If the library fails to load or API call fails
+    """
+    config = create_azure_config(vault_url, client_id)
+    return get_quick_replies(config, org, group)
+
+
+def get_typification_simple(org: str, group: str, vault_url: str = None, client_id: str = None) -> str:
+    """
+    Simplified function to get typifications using Azure Key Vault with automatic configuration.
+    
+    Args:
+        org: Organization identifier
+        group: Group identifier
+        vault_url: Azure Key Vault URL (optional, uses AZURE_KEY_VAULT_URL env var)
+        client_id: Client ID for User-Assigned Managed Identity (optional)
+        
+    Returns:
+        JSON string containing the typification response
+        
+    Raises:
+        LibCoreHeyError: If the library fails to load or API call fails
+    """
+    config = create_azure_config(vault_url, client_id)
+    return get_typification(config, org, group)
+
+
+def get_quick_replies_ultra_simple(org: str, group: str) -> str:
+    """
+    Ultra-simplified function for servers that already have az CLI access to Key Vault.
+    
+    This function requires NO configuration if:
+    - Server has 'az keyvault secret show --vault-name waSecrets --name url-whatapp' access
+    - Secrets url-whatapp and token-whatapp exist in waSecrets vault
+    
+    Args:
+        org: Organization identifier
+        group: Group identifier
+        
+    Returns:
+        JSON string containing the quick replies response
+        
+    Raises:
+        LibCoreHeyError: If the library fails to load or API call fails
+    """
+    # Configuración mínima - la librería Go intentará usar az CLI primero
+    config = {"use_managed_identity": True}
+    return get_quick_replies(config, org, group)
+
+
+def get_typification_ultra_simple(org: str, group: str) -> str:
+    """
+    Ultra-simplified function for servers that already have az CLI access to Key Vault.
+    
+    This function requires NO configuration if:
+    - Server has 'az keyvault secret show --vault-name waSecrets --name token-whatapp' access
+    - Secrets url-whatapp and token-whatapp exist in waSecrets vault
+    
+    Args:
+        org: Organization identifier
+        group: Group identifier
+        
+    Returns:
+        JSON string containing the typification response
+        
+    Raises:
+        LibCoreHeyError: If the library fails to load or API call fails
+    """
+    # Configuración mínima - la librería Go intentará usar az CLI primero
+    config = {"use_managed_identity": True}
+    return get_typification(config, org, group)
 
 
 def add_numbers(a: int, b: int) -> int:
