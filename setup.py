@@ -77,15 +77,21 @@ if existing_libs:
     print(f"✅ Found pre-built binaries: {[lib.split('/')[-1] for lib in existing_libs]}")
     print("🎉 No Go compiler required - using pre-compiled binaries!")
 else:
-    # Only try to build if no binaries exist
-    print("No pre-built binaries found, attempting to build library...")
-    build_success = BuildLibrary.build_library()
-    if not build_success:
-        print("⚠️  Library build failed. Package will install but may not work until binaries are provided.")
-        print("💡 Solutions:")
-        print("   1. Install Go: apt install golang-go (Linux) or brew install go (macOS)")
-        print("   2. Use pre-built binaries from GitHub releases")
-        print("   3. Contact package maintainer for assistance")
+    # Check if we're in CI environment (GitHub Actions)
+    in_ci = os.environ.get('CI') == 'true' or os.environ.get('GITHUB_ACTIONS') == 'true'
+    
+    if in_ci:
+        print("⚠️  Running in CI - skipping build, expecting pre-built binaries")
+    else:
+        # Only try to build if no binaries exist and not in CI
+        print("No pre-built binaries found, attempting to build library...")
+        build_success = BuildLibrary.build_library()
+        if not build_success:
+            print("⚠️  Library build failed. Package will install but may not work until binaries are provided.")
+            print("💡 Solutions:")
+            print("   1. Install Go: apt install golang-go (Linux) or brew install go (macOS)")
+            print("   2. Use pre-built binaries from GitHub releases")
+            print("   3. Contact package maintainer for assistance")
 
 # Get all available shared library files (supports multiple platforms)
 lib_files = []

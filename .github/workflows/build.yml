@@ -83,8 +83,7 @@ jobs:
     
     - name: Build Python package
       run: |
-        # Create modified setup.py for pre-built binaries
-        sed -i 's/build_success = BuildLibrary\.build_library()/# build_success = BuildLibrary.build_library()\n        build_success = True  # Skip build, use pre-built binaries/' setup.py
+        # No modifications needed - setup.py detects CI environment automatically
         python -m build
     
     - name: Upload package artifacts
