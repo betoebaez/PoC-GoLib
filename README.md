@@ -212,12 +212,12 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Changelog
 
-### v1.0.0
+### v1.0.0 (2025-12-02)
 - Initial release
 - HeyBanco API integration (Quick Replies, Typification)
-- Math utility functions
-- Cross-platform support
-- Full type hints
+- Cross-platform support with GitHub Actions
+- Pre-built binaries for macOS, Linux, Windows
+- Full type hints support
 
 ## Support
 
