@@ -207,6 +207,13 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
+    - name: Verify lib.go
+      run: |
+        if [ ! -f ./lib.go ]; then
+          echo "❌ lib.go not found in the current directory!"
+          exit 1
+        fi
+
     - name: Debug - List files
       run: |
         echo "Current directory: $(pwd)"
