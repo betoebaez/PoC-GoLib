@@ -15,17 +15,11 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest]
         include:
           - os: ubuntu-latest
             platform: linux
             binary: libcorehey.so
-          - os: windows-latest
-            platform: windows  
-            binary: libcorehey.dll
-          - os: macos-latest
-            platform: macos
-            binary: libcorehey.dylib
 
     runs-on: ${{ matrix.os }}
     
@@ -40,13 +34,7 @@ jobs:
     - name: Build shared library
       run: |
         mkdir -p libcorehey
-        go build -buildmode=c-shared -o libcorehey/${{ matrix.binary }} lib.go
-      shell: bash
-    
-    - name: Sign library (macOS only)
-      if: matrix.os == 'macos-latest'
-      run: |
-        codesign -s - libcorehey/${{ matrix.binary }} || echo "Signing optional"
+        GOOS=linux GOARCH=arm64 go build -buildmode=c-shared -o libcorehey/${{ matrix.binary }} lib.go
       shell: bash
     
     - name: Upload binary artifact
