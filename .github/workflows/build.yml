@@ -207,6 +207,17 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
+    - name: Ensure correct working directory
+      run: |
+        echo "Changing to the repository root directory..."
+        cd $GITHUB_WORKSPACE
+        echo "Current directory: $(pwd)"
+
+    - name: Debug - List all files recursively
+      run: |
+        echo "Listing all files in the repository..."
+        find . -type f
+
     - name: Verify lib.go
       run: |
         if [ ! -f ./lib.go ]; then
