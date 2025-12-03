@@ -236,13 +236,6 @@ func getEnvironmentVariable(name string) string {
 	return os.Getenv(name)
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 func getSecretsWithAzCLI(vaultName string) (string, string, error) {
 	// Obtener baseURL usando az CLI
 	baseURL, err := executeAzCommand(vaultName, "url-whatapp")
@@ -314,11 +307,6 @@ func getSecretsWithAPI(config VaultConfig) (string, string, error) {
 	if err != nil {
 		return "", "", fmt.Errorf("failed to get token-whatapp secret: %v", err)
 	}
-
-	// Debug: logging de valores obtenidos (remover en producción)
-	fmt.Printf("DEBUG - VaultURL: %s\n", vaultURL)
-	fmt.Printf("DEBUG - url-whatapp value: '%s' (length: %d)\n", baseURL, len(baseURL))
-	fmt.Printf("DEBUG - token-whatapp value: '%s' (length: %d)\n", token[:min(10, len(token))], len(token))
 
 	return baseURL, token, nil
 }
