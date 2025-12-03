@@ -10,8 +10,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"os/exec"
-	"strings"
 	"time"
 	"unsafe"
 )
@@ -101,10 +99,8 @@ func GetTypification(vaultConfig *C.char, org *C.char, group *C.char) *C.char {
 // ============ AZURE KEY VAULT INTEGRATION ============
 
 type VaultConfig struct {
-	VaultURL           string `json:"vault_url,omitempty"` // Opcional si está en variable de entorno
-	UseManagedIdentity bool   `json:"use_managed_identity"`
-	ClientID           string `json:"client_id,omitempty"`   // Solo para User-Assigned MI
-	SkipAzCLI          bool   `json:"skip_az_cli,omitempty"` // Forzar uso de Managed Identity API
+	VaultURL string `json:"vault_url,omitempty"` // Opcional si está en variable de entorno
+	ClientID string `json:"client_id,omitempty"` // Solo para User-Assigned MI
 }
 
 type AzureTokenResponse struct {
@@ -122,34 +118,13 @@ func getSecretsFromVault(configJSON string) (string, string, error) {
 		return "", "", fmt.Errorf("invalid vault config: %v", err)
 	}
 
-	// Determinar el nombre del vault - puede venir de config o variable de entorno
-	vaultName := getEnvironmentVariable("AZURE_KEY_VAULT_NAME")
-	if vaultName == "" {
-		vaultName = "wasecrets" // Nombre por defecto corregido
-	}
-
-	// Si skip_az_cli está activado, usar directamente Managed Identity API
-	if config.SkipAzCLI {
-		return getSecretsWithAPI(config)
-	}
-
-	// Intentar primero con az CLI (más simple si está disponible)
-	baseURL, token, err := getSecretsWithAzCLI(vaultName)
-	if err == nil {
-		return baseURL, token, nil
-	}
-
-	// Fallback: usar API REST si az CLI no está disponible
+	// Usar solo Managed Identity API
 	return getSecretsWithAPI(config)
 }
 
 func getAzureAccessToken(config VaultConfig) (string, error) {
-	if config.UseManagedIdentity {
-		return getManagedIdentityToken(config.ClientID)
-	}
-
-	// Fallback: intentar obtener desde variables de entorno (desarrollo local)
-	return getServicePrincipalToken()
+	// Usar solo Managed Identity
+	return getManagedIdentityToken(config.ClientID)
 }
 
 func getManagedIdentityToken(clientID string) (string, error) {
@@ -196,12 +171,6 @@ func getManagedIdentityToken(clientID string) (string, error) {
 	return tokenResp.AccessToken, nil
 }
 
-func getServicePrincipalToken() (string, error) {
-	// Para desarrollo local - obtener desde variables de entorno
-	// En producción esto no debería usarse
-	return "", fmt.Errorf("managed identity not available and no service principal configured")
-}
-
 func getSecretFromVault(vaultURL, secretName, accessToken string) (string, error) {
 	secretURL := fmt.Sprintf("%s/secrets/%s?api-version=7.4", vaultURL, secretName)
 
@@ -234,44 +203,6 @@ func getSecretFromVault(vaultURL, secretName, accessToken string) (string, error
 
 func getEnvironmentVariable(name string) string {
 	return os.Getenv(name)
-}
-
-func getSecretsWithAzCLI(vaultName string) (string, string, error) {
-	// Obtener baseURL usando az CLI
-	baseURL, err := executeAzCommand(vaultName, "url-whatapp")
-	if err != nil {
-		return "", "", fmt.Errorf("failed to get url-whatapp with az CLI: %v", err)
-	}
-
-	// Obtener token usando az CLI
-	token, err := executeAzCommand(vaultName, "token-whatapp")
-	if err != nil {
-		return "", "", fmt.Errorf("failed to get token-whatapp with az CLI: %v", err)
-	}
-
-	return baseURL, token, nil
-}
-
-func executeAzCommand(vaultName, secretName string) (string, error) {
-	// Ejecutar: az keyvault secret show --vault-name vaultName --name secretName --query value -o tsv
-	cmd := exec.Command("az", "keyvault", "secret", "show",
-		"--vault-name", vaultName,
-		"--name", secretName,
-		"--query", "value",
-		"-o", "tsv")
-
-	output, err := cmd.Output()
-	if err != nil {
-		return "", fmt.Errorf("az command failed: %v", err)
-	}
-
-	// Limpiar salto de línea y espacios
-	result := strings.TrimSpace(string(output))
-	if result == "" {
-		return "", fmt.Errorf("secret %s is empty", secretName)
-	}
-
-	return result, nil
 }
 
 func getSecretsWithAPI(config VaultConfig) (string, string, error) {
