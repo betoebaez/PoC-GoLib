@@ -15,11 +15,17 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
         include:
           - os: ubuntu-latest
             platform: linux
             binary: libcorehey.so
+          - os: windows-latest
+            platform: windows  
+            binary: libcorehey.dll
+          - os: macos-latest
+            platform: macos
+            binary: libcorehey.dylib
 
     runs-on: ${{ matrix.os }}
     
@@ -34,7 +40,13 @@ jobs:
     - name: Build shared library
       run: |
         mkdir -p libcorehey
-        GOOS=linux GOARCH=arm64 go build -buildmode=c-shared -o libcorehey/${{ matrix.binary }} lib.go
+        go build -buildmode=c-shared -o libcorehey/${{ matrix.binary }} lib.go
+      shell: bash
+    
+    - name: Sign library (macOS only)
+      if: matrix.os == 'macos-latest'
+      run: |
+        codesign -s - libcorehey/${{ matrix.binary }} || echo "Signing optional"
       shell: bash
     
     - name: Upload binary artifact
@@ -195,36 +207,11 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
-    - name: Ensure correct working directory
-      run: |
-        echo "Changing to the repository root directory..."
-        cd $GITHUB_WORKSPACE
-        echo "Current directory: $(pwd)"
-
-    - name: Debug - List all files recursively
-      run: |
-        echo "Listing all files in the repository..."
-        find . -type f
-
-    - name: Verify lib.go
-      run: |
-        if [ ! -f ./lib.go ]; then
-          echo "❌ lib.go not found in the current directory!"
-          exit 1
-        fi
-
-    - name: Debug - List files
-      run: |
-        echo "Current directory: $(pwd)"
-        ls -la
-
     - name: Build shared libraries for multiple architectures
       run: |
         mkdir -p libcorehey
-        echo "Building for amd64..."
-        GOOS=linux GOARCH=amd64 go build -buildmode=c-shared -o libcorehey/libcorehey_amd64.so ./lib.go
-        echo "Building for arm64..."
-        GOOS=linux GOARCH=arm64 go build -buildmode=c-shared -o libcorehey/libcorehey_arm64.so ./lib.go
+        GOOS=linux GOARCH=amd64 go build -buildmode=c-shared -o libcorehey/libcorehey_amd64.so lib.go
+        GOOS=linux GOARCH=arm64 go build -buildmode=c-shared -o libcorehey/libcorehey_arm64.so lib.go
       shell: bash
 
     - name: Upload multi-arch binaries
