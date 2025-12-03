@@ -93,19 +93,29 @@ else:
             print("   2. Use pre-built binaries from GitHub releases")
             print("   3. Contact package maintainer for assistance")
 
-# Get all available shared library files (supports multiple platforms)
-lib_files = []
-for ext in ["*.dylib", "*.so", "*.dll"]:
-    lib_files.extend(glob.glob(f"libcorehey/{ext}"))
+# Detect architecture and platform
+arch = platform.machine()
+os_name = platform.system().lower()
 
-# Convert to relative paths for package_data
-lib_files = [f.replace("libcorehey/", "") for f in lib_files]
+# Map architecture and platform to binary names
+binary_name = None
+if os_name == "linux":
+    if arch == "x86_64":
+        binary_name = "libcorehey_amd64.so"
+    elif arch == "aarch64":
+        binary_name = "libcorehey_arm64.so"
+elif os_name == "darwin":
+    binary_name = "libcorehey.dylib"
+elif os_name == "windows":
+    binary_name = "libcorehey.dll"
 
-if not lib_files:
-    print("Warning: No shared libraries found!")
-    
-print(f"Including library files: {lib_files}")
+if not binary_name:
+    raise RuntimeError(f"Unsupported platform or architecture: {os_name} {arch}")
 
+# Include the binary in package data
+lib_files = [binary_name]
+
+# Update package_data to include the architecture-specific binary
 setup(
     name="LibCoreHey",
     version=VERSION,
