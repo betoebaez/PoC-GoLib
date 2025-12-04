@@ -20,18 +20,12 @@ jobs:
           - os: ubuntu-latest
             platform: linux
             binary: libcorehey.so
-            goos: linux
-            goarch: arm64
           - os: windows-latest
             platform: windows  
             binary: libcorehey.dll
-            goos: windows
-            goarch: amd64
           - os: macos-latest
             platform: macos
             binary: libcorehey.dylib
-            goos: darwin
-            goarch: amd64
 
     runs-on: ${{ matrix.os }}
     
@@ -46,7 +40,7 @@ jobs:
     - name: Build shared library
       run: |
         mkdir -p libcorehey
-        GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -buildmode=c-shared -o libcorehey/${{ matrix.binary }} lib.go
+        go build -buildmode=c-shared -o libcorehey/${{ matrix.binary }} lib.go
       shell: bash
     
     - name: Sign library (macOS only)
