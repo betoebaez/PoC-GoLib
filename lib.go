@@ -154,7 +154,8 @@ func getSecretsFromVault(configJSON string) (string, string, error) {
 }
 
 func getSecretValue(ctx context.Context, client *azsecrets.Client, name string) (string, error) {
-	resp, err := client.GetSecret(ctx, name, nil)
+	// Versión vacía ("") => última versión del secreto
+	resp, err := client.GetSecret(ctx, name, "", nil)
 	if err != nil {
 		return "", err
 	}
